@@ -202,15 +202,15 @@ config_mariadb(){
 		return 0
 	fi
 
-	sed -i 's+^\[mysqld\]+\[mysqld\]\ndatadir=/var/lib/mysql\nsocket=/var/lib/mysql/mysql.sock\nlog-error=/var/log/mariadb/mariadb.log\npid-file=/run/mariadb/mariadb.pid\n\n###ATAUR-CUSTOM-CONFIG###+' /etc/my.cnf.d/server.cnf
+	sed -i 's+^\[mysqld\]+\[mysqld\]\ndatadir=/var/lib/mysql/\nsocket=/var/lib/mysql/mysql.sock\nlog-error=/var/log/mariadb/mariadb.log\npid-file=/var/run/mariadb/mariadb.pid\n\n###ATAUR-CUSTOM-CONFIG###+' /etc/my.cnf.d/server.cnf
 	sed -i 's/###ATAUR-CUSTOM-CONFIG###/#skip-networking\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 	sed -i 's/###ATAUR-CUSTOM-CONFIG###/bind-address = 127.0.0.1\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 	sed -i 's/###ATAUR-CUSTOM-CONFIG###/#sql_mode=NO_ENGINE_SUBSTITUTION,NO_AUTO_CREATE_USER\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 	sed -i 's/###ATAUR-CUSTOM-CONFIG###/character-set-server=utf8\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 	sed -i 's/###ATAUR-CUSTOM-CONFIG###/collation-server=utf8_general_ci\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 
-	mkdir -p "/run/mariadb"
-	chown mysql:mysql "/run/mariadb"
+	mkdir -p "/var/run/mariadb"
+	chown mysql:mysql "/var/run/mariadb"
 	
 	restart_daemon "mariadb"
 	echo "please run \"mariadb-secure-installation\""
