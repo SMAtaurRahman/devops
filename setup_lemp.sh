@@ -165,6 +165,16 @@ install_php(){
 	install_package php php-cli php-fpm php-mysqlnd php-opcache
 }
 
+config_php(){
+	if [ ! -f "/etc/php.d/50-custom.ini" ]; then
+		cat > /etc/php.d/50-custom.ini <<EOL
+opcache.enable=1
+expose_php = off
+cgi.fix_pathinfo=0
+EOL
+	fi
+}
+
 install_mariadb(){
 	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		if [ ! -f "/etc/yum.repos.d/MariaDB.repo" ]; then 
@@ -229,6 +239,7 @@ install_epel
 install_nginx
 
 install_php
+config_php
 
 install_mariadb
 config_mariadb
