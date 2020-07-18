@@ -22,8 +22,10 @@ fi
 
 update_system(){
 	echo -n "=> updating system packages ..... "
-	if [[ "${OS}" = "centos" ]]; then
+	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		dnf update -y -q
+	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
+		yum update -y -q
 	else
 		apt-get -qq update
 		apt-get -qq upgrade
@@ -69,8 +71,10 @@ stop_daemon(){
 
 install_package(){
 	echo -n "=> installing $1 ..... "
-	if [[ "${OS}" = "centos" ]]; then
+	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		dnf install "$@" -y -q
+	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
+		yum install "$@" -y -q > /dev/null
 	else
 		apt-get -qq install "$@" > /dev/null
 	fi
@@ -101,6 +105,7 @@ install_dependencies(){
 		fi
 
 		install_package "epel-release"
+		install_package "yum-utils"
 	else
 		install_package "apt-utils"
 		install_package "lsb-release"
@@ -111,6 +116,7 @@ install_dependencies(){
 	install_package "ca-certificates"
 	install_package "curl" "wget"
 	install_package "git"
+	install_package "pwgen"
 }
 
 install_nginx(){
@@ -159,19 +165,16 @@ install_php(){
 		return 0
 	fi
 
-	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
-		if ! is_package_installed "remi-release"; then
-			install_package "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
-			install_package "yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
-			install_package "yum-utils"
-			yum-config-manager --enable remi-php74
-		fi
-	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
+	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		if ! is_package_installed "remi-release"; then
 			install_package "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
-			install_package "yum-utils"
 			dnf module reset php
 			dnf module install php:remi-7.4
+		fi
+	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
+		if ! is_package_installed "remi-release"; then
+			install_package "https://rpms.remirepo.net/enterprise/remi-release-7.rpm"
+			yum-config-manager --enable remi-php74 > /dev/null
 		fi
 	else
 		wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add -
@@ -205,12 +208,13 @@ EOL
 }
 
 install_mariadb(){
-	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
+	if [[ "${OS}" = "centos" ]]; then
 		if [ ! -f "/etc/yum.repos.d/MariaDB.repo" ]; then 
 			cat << EOF >> /etc/yum.repos.d/MariaDB.repo
+# http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-baseurl = https://yum.mariadb.org/10.4/centos8-amd64
+baseurl = https://yum.mariadb.org/10.4/centos${OS_VERSION}-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 module_hotfixes=1
@@ -269,6 +273,7 @@ config_mariadb(){
 		fi
 
 		cat > "/etc/mysql/mariadb.conf.d/custom.cnf" <<EOL
+[mysqld]
 datadir=/var/lib/mysql/
 socket=/var/run/mysqld/mysqld.sock
 log-error=/var/log/mariadb/mariadb.log
@@ -312,6 +317,9 @@ install_fish(){
 	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		install_package "util-linux-user"
 		wget -q https://download.opensuse.org/repositories/shells:fish:release:3/CentOS_8/shells:fish:release:3.repo -P /etc/yum.repos.d/
+	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
+		install_package "util-linux"
+		wget -q https://download.opensuse.org/repositories/shells:fish:release:2/CentOS_7/shells:fish:release:2.repo -P /etc/yum.repos.d/
 	elif [[ "${OS}" = "debian" ]]; then
 		echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/3/Debian_10/ /' > /etc/apt/sources.list.d/shells:fish:release:3.list
 		curl -fsSL https://download.opensuse.org/repositories/shells:fish:release:3/Debian_10/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/shells:fish:release:3.gpg > /dev/null
@@ -357,4 +365,6 @@ start_php_fpm
 
 start_daemon "mariadb"
 start_daemon "nginx"
+
+echo -e "\e[32;1mLEMP setup is completed.\033[0m"
 
