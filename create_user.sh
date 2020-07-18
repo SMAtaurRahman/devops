@@ -9,12 +9,35 @@ set -o pipefail  # don't hide errors within pipes
 #	echo "please enter user name as second argument"
 #	exit 1
 #fi
+if [[ -e /etc/debian_version ]]; then
+	readonly OS="debian"
+	readonly OS_VERSION=$(grep -oE '[0-9]+' /etc/debian_version | head -1)
+elif [[ -e /etc/centos-release ]]; then
+	readonly OS="centos"
+	readonly OS_VERSION=$(grep -oE '[0-9]+' /etc/centos-release | head -1)
+else
+	echo "This script only supports Centos & Debian"
+	exit
+fi
+
+if [[ "$EUID" -ne 0 ]]; then
+	echo "This installer needs to be run with superuser privileges."
+	exit
+fi
+
+if [[ "${OS}" = "centos" ]]; then
+	readonly FPM_DIR='/etc/php-fpm.d'
+	readonly FPM_RUN_DIR='/run/php-fpm'
+else
+	readonly FPM_DIR='/etc/php/7.4/fpm/pool.d'
+	readonly FPM_RUN_DIR='/run/php'
+fi
 
 readonly USER="${1}"
 
 echo "creating new system user: ${USER}..."
 
-useradd "${USER}"
+useradd -m "${USER}"
 passwd "${USER}"
 
 echo "assigning \"nginx\" user to \"${USER}\" group"
@@ -26,12 +49,12 @@ chmod 0750 "/home/${USER}"
 ##### PHP-FPM ######
 echo "creating new PHP-FPM conf for ${USER}"
 
-if [ ! -f "/etc/php-fpm.d/${USER}.conf" ]; then
-	cat > "/etc/php-fpm.d/${USER}.conf" <<EOF
+if [ ! -f "${FPM_DIR}/${USER}.conf" ]; then
+	cat > "${FPM_DIR}/${USER}.conf" <<EOF
 [${USER}]
 user = ${USER}
 group = ${USER}
-listen = /run/php-fpm/${USER}.sock
+listen = ${FPM_RUN_DIR}/${USER}.sock
 listen.owner = ${USER}
 listen.group = ${USER}
 listen.mode = 0660
@@ -111,7 +134,7 @@ server {
 	try_files \$uri =404;
 	include fastcgi.conf;
 	
-	fastcgi_pass   unix:/run/php-fpm/${USER}.sock;
+	fastcgi_pass   unix:${FPM_RUN_DIR}/${USER}.sock;
     }
 
 #    location /assets {
@@ -138,6 +161,11 @@ fi
 
 
 nginx -t
-php-fpm -t
+
+if [[ "${OS}" = "centos" ]]; then
+	php-fpm -t
+else
+	php-fpm7.4 -t
+fi
 
 echo "please reload nginx & php-fpm to load new config"
