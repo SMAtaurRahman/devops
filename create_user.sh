@@ -9,6 +9,12 @@ set -o pipefail  # don't hide errors within pipes
 #	echo "please enter user name as second argument"
 #	exit 1
 #fi
+
+if [[ "$EUID" -ne 0 ]]; then
+	echo "This installer needs to be run with superuser privileges."
+	exit
+fi
+
 if [[ -e /etc/debian_version ]]; then
 	readonly OS="debian"
 	readonly OS_VERSION=$(grep -oE '[0-9]+' /etc/debian_version | head -1)
@@ -17,11 +23,6 @@ elif [[ -e /etc/centos-release ]]; then
 	readonly OS_VERSION=$(grep -oE '[0-9]+' /etc/centos-release | head -1)
 else
 	echo "This script only supports Centos & Debian"
-	exit
-fi
-
-if [[ "$EUID" -ne 0 ]]; then
-	echo "This installer needs to be run with superuser privileges."
 	exit
 fi
 
@@ -35,10 +36,21 @@ fi
 
 readonly USER="${1}"
 
+readonly PASSWORD="$(pwgen 16 1)"
+
+if [ -z "${PASSWORD}" ]; then
+	echo "package \"pwgen\" is required to generate secure password"
+	echo "please install \"pwgen\" and try again"
+	exit 1
+fi
+
 echo "creating new system user: ${USER}..."
 
 useradd -m "${USER}"
-passwd "${USER}"
+
+echo "setting new password ... \"${PASSWORD}\""
+
+echo "${PASSWORD}" | passwd --stdin "${USER}"
 
 echo "assigning \"nginx\" user to \"${USER}\" group"
 usermod -a -G "${USER}" "nginx"
@@ -106,18 +118,26 @@ fastcgi_param  REDIRECT_STATUS    200;
 EOF
 fi
 
+
+if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
+	readonly IPv4="$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')"
+	readonly LISTEN_TO="${IPv4}:80"
+else
+	readonly LISTEN_TO="80"
+fi
+
 if [ ! -f "/etc/nginx/conf.d/${USER}.conf" ]; then
 	cat > "/etc/nginx/conf.d/${USER}.conf" <<EOF
 server {
     server_name ${USER}.com www.${USER}.com;
-    listen 80;
+    listen ${LISTEN_TO};
 
     root /home/${USER}/public_html;
 
     index index.php;
 
-    access_log /var/log/nginx/${USER}.com_access_log;
-    error_log /var/log/nginx/${USER}.com_error_log;
+    access_log /var/log/nginx/${USER}.com_access.log;
+    error_log /var/log/nginx/${USER}.com_error.log;
 
 #    if (\$scheme = http) {
 #	return 301 https://\$host\$request_uri;

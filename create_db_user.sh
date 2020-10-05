@@ -4,12 +4,23 @@ set -o errexit   # abort on nonzero exitstatus
 set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 
+if [[ "$EUID" -ne 0 ]]; then
+	echo "This installer needs to be run with superuser privileges."
+	exit
+fi
+
 function query(){
 	mysql --execute="$1"
 }
 
 readonly USER="$1"
 readonly PASSWORD="$(pwgen 16 1)"
+
+if [ -z "${PASSWORD}" ]; then
+	echo "package \"pwgen\" is required to generate secure password"
+	echo "please install \"pwgen\" and try again"
+	exit 1
+fi
 
 echo "creating mysql user: '${USER}' with password:'${PASSWORD}'"
 
