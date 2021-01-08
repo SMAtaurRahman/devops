@@ -117,6 +117,7 @@ install_dependencies(){
 	install_package "curl" "wget"
 	install_package "git"
 	install_package "pwgen"
+	install_package "certbot" "python-certbot-nginx"
 }
 
 install_nginx(){
