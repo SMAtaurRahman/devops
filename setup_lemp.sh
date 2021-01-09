@@ -28,7 +28,7 @@ update_system(){
 		yum update -y -q
 	else
 		apt-get -qq update
-		apt-get -qq upgrade
+		apt-get -qq upgrade --with-new-pkgs
 	fi
         echo "done"
 }
