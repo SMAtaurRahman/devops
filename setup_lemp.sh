@@ -258,8 +258,12 @@ config_mariadb(){
 		sed -i 's/###ATAUR-CUSTOM-CONFIG###/character-set-server=utf8\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 		sed -i 's/###ATAUR-CUSTOM-CONFIG###/collation-server=utf8_general_ci\n###ATAUR-CUSTOM-CONFIG###/' /etc/my.cnf.d/server.cnf
 
-		mkdir -p "/var/run/mariadb"
-		chown mysql:mysql "/var/run/mariadb"
+		cat > "/etc/systemd/system/mariadb.service.d/pid-dir.conf" <<EOL
+[Service]
+RuntimeDirectory=mariadb
+EOL
+
+		systemctl daemon-reload
 
 		restart_daemon "mariadb"
 		echo "please run \"mariadb-secure-installation\""
