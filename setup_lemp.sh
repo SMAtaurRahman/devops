@@ -300,9 +300,9 @@ install_firewall(){
         #if [[ "${OS}" = "centos" ]]; then
         	if ! is_package_installed "firewalld"; then
 			install_package "firewalld"
-			enable_daemon "firewalld"
 		fi
 
+		enable_daemon "firewalld"
 		start_daemon "firewalld"
 		
 		echo -n "opening port for http & https...."
