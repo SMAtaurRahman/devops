@@ -136,7 +136,7 @@ server {
     server_name ${USER}.com www.${USER}.com;
     listen ${LISTEN_TO};
 
-    root /home/${USER}/public_html;
+    root /home/${USER}/public;
 
     index index.php;
 
