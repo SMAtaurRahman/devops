@@ -170,8 +170,8 @@ install_php(){
 	if [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 8 ]]; then
 		if ! is_package_installed "remi-release"; then
 			install_package "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
-			dnf module reset php
-			dnf module install php:remi-7.4
+			dnf module reset php -y -q
+			dnf module install php:remi-7.4 -y -q
 		fi
 	elif [[ "${OS}" = "centos" && "${OS_VERSION}" -eq 7 ]]; then
 		if ! is_package_installed "remi-release"; then
