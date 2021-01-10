@@ -58,6 +58,10 @@ usermod -a -G "${USER}" "nginx"
 echo "chmod /home/${USER} to 0750 (nginx can now read files)"
 chmod 0750 "/home/${USER}"
 
+# Temporary dir
+mkdir "/home/${USER}/tmp"
+chown "${USER}:" "/home/${USER}/tmp"
+
 ##### PHP-FPM ######
 echo "creating new PHP-FPM conf for ${USER}"
 
