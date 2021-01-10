@@ -106,18 +106,19 @@ install_dependencies(){
 
 		install_package "epel-release"
 		install_package "yum-utils"
+		install_package "certbot" "python3-certbot-nginx"
 	else
 		install_package "apt-utils"
 		install_package "lsb-release"
 		install_package "gnupg2"
 		install_package "apt-transport-https"
+		install_package "certbot" "python-certbot-nginx"
 	fi
 
 	install_package "ca-certificates"
 	install_package "curl" "wget"
 	install_package "git"
 	install_package "pwgen"
-	install_package "certbot" "python-certbot-nginx"
 }
 
 install_nginx(){
