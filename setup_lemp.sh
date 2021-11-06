@@ -216,7 +216,7 @@ install_mariadb(){
 # http://downloads.mariadb.org/mariadb/repositories/
 [mariadb]
 name = MariaDB
-baseurl = https://yum.mariadb.org/10.5/centos${OS_VERSION}-amd64
+baseurl = https://yum.mariadb.org/10.6/centos${OS_VERSION}-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1
 module_hotfixes=1
@@ -234,7 +234,7 @@ EOF
 		cat > /etc/apt/sources.list.d/mariadb.list <<EOL
 # http://downloads.mariadb.org/mariadb/repositories/
 deb [arch=amd64,arm64,ppc64el] https://mirror.rackspace.com/mariadb/repo/10.5/debian  $(lsb_release -sc) main
-deb-src https://mirror.rackspace.com/mariadb/repo/10.5/debian $(lsb_release -sc) main
+deb-src https://mirror.rackspace.com/mariadb/repo/10.6/debian $(lsb_release -sc) main
 EOL
 		update_system
 		install_package mariadb-server mariadb-client
